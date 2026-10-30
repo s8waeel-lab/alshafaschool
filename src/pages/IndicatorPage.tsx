@@ -398,7 +398,7 @@ export default function IndicatorPage() {
                 </div>
               )}
               
-              {isMember || isAdmin ? (
+              {isAdmin ? (
                 <div className="space-y-5">
                   {/* Mode Switcher Tabs */}
                   <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-white/5 rounded-2xl border border-white/10">

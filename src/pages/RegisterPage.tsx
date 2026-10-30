@@ -16,8 +16,13 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      await registerUser(email, password, displayName);
-      navigate('/');
+      const { profileError } = await registerUser(email, password, displayName);
+      if (profileError) {
+        setError('تم إنشاء الحساب، ولكن تعذر مزامنة بياناتك مع الإدارة حالياً بسبب ضغط على النظام. يمكنك الدخول الآن، ولكن قد لا يظهر حسابك للإدارة فوراً.');
+        setTimeout(() => navigate('/'), 5000);
+      } else {
+        navigate('/');
+      }
     } catch (err: any) {
       if (err.code === 'auth/email-already-in-use') {
         setError('هذا البريد الإلكتروني مستخدم بالفعل.');

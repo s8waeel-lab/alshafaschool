@@ -544,13 +544,7 @@ export const openFileInNewWindow = (item: {
   if (fileType) params.set('type', fileType);
 
   const viewerUrl = `${window.location.origin}/view-file?${params.toString()}`;
-  const link = document.createElement('a');
-  link.href = viewerUrl;
-  link.target = '_blank';
-  link.rel = 'noopener noreferrer';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  window.open(viewerUrl, '_blank');
 };
 
 /**

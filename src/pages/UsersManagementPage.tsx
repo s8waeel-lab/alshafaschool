@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, getDocs, getDocsFromCache, doc, updateDoc, query, orderBy } from 'firebase/firestore';
-import { db, readLocalCache, writeLocalCache, runFirestoreOp } from '../services/firebase';
+import { db, readLocalCache, writeLocalCache, runFirestoreOp, isFirestoreQuotaTripped } from '../services/firebase';
 import { UserProfile } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -12,7 +12,8 @@ import {
   Search,
   ChevronRight,
   Clock,
-  AlertCircle
+  AlertCircle,
+  RefreshCcw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -21,9 +22,11 @@ export default function UsersManagementPage() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isQuotaTripped, setIsQuotaTripped] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
+    setIsQuotaTripped(isFirestoreQuotaTripped());
     const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
     try {
       const snap = await runFirestoreOp(() => getDocs(q));
@@ -114,10 +117,36 @@ export default function UsersManagementPage() {
         </div>
       </div>
 
+      {isQuotaTripped && (
+        <div className="bg-amber-50 border border-amber-200 p-6 rounded-3xl flex items-start gap-4 text-amber-800 animate-in fade-in slide-in-from-top-4">
+          <AlertCircle className="shrink-0 mt-1" size={24} />
+          <div className="space-y-1">
+            <h3 className="font-black text-sm">تنبيه: تم تجاوز حد القراءة اليومي (Quota)</h3>
+            <p className="text-xs font-bold leading-relaxed opacity-90">
+              قد لا تظهر كافة الأسماء المسجلة حالياً أو قد تكون البيانات المعروضة قديمة من الذاكرة المؤقتة.
+              يرجى المحاولة لاحقاً عندما يتم تصفير العداد اليومي من قِبل Google Firestore.
+            </p>
+          </div>
+        </div>
+      )}
+
       {loading ? (
-        <div className="p-12 text-center text-gray-400 font-bold">جاري تحميل قائمة المستخدمين...</div>
+        <div className="p-20 text-center space-y-4 bg-white rounded-3xl border border-gray-100">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-gray-400 font-bold">جاري تحميل قائمة المستخدمين...</p>
+        </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="space-y-6">
+          <div className="flex justify-end">
+            <button 
+              onClick={fetchUsers}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-gray-50 transition-all shadow-sm"
+            >
+              <RefreshCcw size={14} className={loading ? 'animate-spin' : ''} />
+              تحديث القائمة
+            </button>
+          </div>
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-right">
               <thead className="bg-slate-900 text-white text-sm">
@@ -207,6 +236,7 @@ export default function UsersManagementPage() {
             <div className="p-12 text-center text-gray-400">لا توجد نتائج بحث مطابقة.</div>
           )}
         </div>
+      </div>
       )}
     </div>
   );

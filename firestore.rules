@@ -141,7 +141,7 @@ service cloud.firestore {
 
       allow read: if true;
       
-      allow create: if isMember() && isValidEvidence(incoming()) && incoming().uploadedBy == request.auth.uid;
+      allow create: if isAdmin() && isValidEvidence(incoming()) && incoming().uploadedBy == request.auth.uid;
       
       allow update: if isSignedIn() && isValidEvidence(incoming()) && (
         (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'rejectionReason', 'updatedAt'])) ||
@@ -169,7 +169,7 @@ service cloud.firestore {
       }
 
       allow read: if true;
-      allow create: if isMember() && isValidLibraryFile(incoming());
+      allow create: if isAdmin() && isValidLibraryFile(incoming());
       allow update: if isMember() && isValidLibraryFile(incoming()) && (isAdmin() || resource.data.uploadedBy == request.auth.uid);
       allow delete: if isAdmin();
     }
@@ -187,12 +187,12 @@ service cloud.firestore {
       }
 
       allow read: if true;
-      allow create: if isMember() && isValidId(fileId) && isValidUploadedFile(incoming());
+      allow create: if isAdmin() && isValidId(fileId) && isValidUploadedFile(incoming());
       allow delete: if isAdmin();
 
       match /chunks/{chunkId} {
         allow read: if true;
-        allow create: if isMember() && incoming().index is int && incoming().data is string && incoming().data.size() <= 800000;
+        allow create: if isAdmin() && incoming().index is int && incoming().data is string && incoming().data.size() <= 800000;
         allow delete: if isAdmin();
       }
     }

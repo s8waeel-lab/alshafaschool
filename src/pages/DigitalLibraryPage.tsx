@@ -176,7 +176,7 @@ export default function DigitalLibraryPage() {
         </div>
         
         <div className="relative z-10 shrink-0 flex flex-wrap items-center gap-3">
-          {(isMember || isAdmin) && (
+          {isAdmin && (
             <button
               onClick={() => setShowAddPanel((prev) => !prev)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-black shadow-xl hover:shadow-blue-100 transition-all flex items-center gap-3 cursor-pointer whitespace-nowrap"
@@ -207,7 +207,7 @@ export default function DigitalLibraryPage() {
       )}
 
       {/* Add File / Drive Link Panel */}
-      {showAddPanel && (isMember || isAdmin) && (
+      {showAddPanel && isAdmin && (
         <div className="bg-white p-8 rounded-3xl border border-blue-100 shadow-lg space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
             <div>

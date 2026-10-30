@@ -10,7 +10,7 @@ export default function HomePage() {
 
   useEffect(() => {
     let active = true;
-    getLibraryFiles(undefined, undefined, !isMember && !isAdmin)
+    getLibraryFiles(undefined, undefined, false)
       .then((files) => {
         if (active) setLibraryCount(files.length);
       })

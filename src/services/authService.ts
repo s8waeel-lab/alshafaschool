@@ -121,8 +121,8 @@ export const getCurrentUserProfile = async (uid: string): Promise<UserProfile | 
           uid,
           email: currentUser.email || '',
           displayName: currentUser.displayName || (isBootstrappedAdmin ? 'مدير النظام' : 'مستخدم'),
-          role: isBootstrappedAdmin ? 'owner' : 'member',
-          status: 'approved',
+          role: isBootstrappedAdmin ? 'owner' : 'visitor',
+          status: isBootstrappedAdmin ? 'approved' : 'pending',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
@@ -164,10 +164,12 @@ export const registerUser = async (email: string, pass: string, displayName: str
         updatedAt: serverTimestamp(),
       })
     );
-  } catch {
-    // Saved in local cache if Firestore write quota is exceeded
+  } catch (error) {
+    console.error('Profile write failed (likely quota):', error);
+    // We don't throw here to allow the user to continue using the app locally
+    return { user, profileError: true };
   }
-  return user;
+  return { user, profileError: false };
 };
 
 export const loginUser = async (email: string, pass: string) => {
