@@ -1,0 +1,177 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile with role-based access control.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["owner", "admin", "member", "visitor"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "suspended"] },
+        "schoolId": { "type": "string" },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["uid", "email", "role", "status"]
+    },
+    "School": {
+      "title": "School",
+      "description": "Educational institution within the complex.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "order": { "type": "integer" }
+      },
+      "required": ["id", "name", "order"]
+    },
+    "Domain": {
+      "title": "Domain",
+      "description": "Evaluation area (e.g., School Environment).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "order": { "type": "integer" },
+        "isShared": { "type": "boolean" }
+      },
+      "required": ["id", "name", "order"]
+    },
+    "Standard": {
+      "title": "Standard",
+      "description": "Quality standard within a domain.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "domainId": { "type": "string" },
+        "order": { "type": "integer" }
+      },
+      "required": ["id", "name", "domainId", "order"]
+    },
+    "Indicator": {
+      "title": "Indicator",
+      "description": "Specific performance indicator.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "standardId": { "type": "string" },
+        "isShared": { "type": "boolean" },
+        "targetEvidenceCount": { "type": "integer" },
+        "order": { "type": "integer" }
+      },
+      "required": ["id", "name", "standardId", "order"]
+    },
+    "Evidence": {
+      "title": "Evidence",
+      "description": "Uploaded evidence document metadata.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "filePath": { "type": "string" },
+        "fileType": { "type": "string" },
+        "fileSize": { "type": "integer" },
+        "indicatorId": { "type": "string" },
+        "schoolId": { "type": "string" },
+        "isShared": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "archived"] },
+        "rejectionReason": { "type": "string" },
+        "uploadedBy": { "type": "string" },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["title", "indicatorId", "status", "uploadedBy"]
+    },
+    "LibraryFile": {
+      "title": "LibraryFile",
+      "description": "Digital library file or Google Drive link.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "filePath": { "type": "string" },
+        "fileType": { "type": "string" },
+        "fileSize": { "type": "integer" },
+        "categoryId": { "type": "string" },
+        "schoolId": { "type": "string" },
+        "academicYear": { "type": "string" },
+        "accessLevel": { "type": "string", "enum": ["public", "private"] },
+        "uploadedBy": { "type": "string" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["title", "fileUrl", "categoryId", "accessLevel", "uploadedBy"]
+    },
+    "SystemSetting": {
+      "title": "SystemSetting",
+      "description": "System-wide configuration including central Google Drive folder link.",
+      "type": "object",
+      "properties": {
+        "driveFolderUrl": { "type": "string" },
+        "driveFolderName": { "type": "string" },
+        "updatedBy": { "type": "string" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["driveFolderName"]
+    },
+    "UploadedFile": {
+      "title": "UploadedFile",
+      "description": "Cloud file storage metadata for direct uploads.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fileName": { "type": "string" },
+        "fileType": { "type": "string" },
+        "fileSize": { "type": "integer" },
+        "totalChunks": { "type": "integer" },
+        "uploadedBy": { "type": "string" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["id", "fileName", "totalChunks", "uploadedBy"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles collection."
+    },
+    "schools/{schoolId}": {
+      "schema": "School",
+      "description": "Schools in the complex."
+    },
+    "domains/{domainId}": {
+      "schema": "Domain",
+      "description": "Evaluation domains."
+    },
+    "standards/{standardId}": {
+      "schema": "Standard",
+      "description": "Quality standards."
+    },
+    "indicators/{indicatorId}": {
+      "schema": "Indicator",
+      "description": "Performance indicators."
+    },
+    "evidence/{evidenceId}": {
+      "schema": "Evidence",
+      "description": "Evidence documents."
+    },
+    "libraryFiles/{fileId}": {
+      "schema": "LibraryFile",
+      "description": "Digital library documents and links."
+    },
+    "settings/{settingId}": {
+      "schema": "SystemSetting",
+      "description": "Central system settings."
+    },
+    "uploadedFiles/{fileId}": {
+      "schema": "UploadedFile",
+      "description": "Direct file upload storage."
+    }
+  }
+}

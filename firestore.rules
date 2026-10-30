@@ -1,0 +1,200 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // -------------------------------------------------------------------------
+    // GLOBAL HELPERS
+    // -------------------------------------------------------------------------
+    
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { 
+      return request.auth != null; 
+    }
+    
+    function isOwner() {
+      return isSignedIn() && (
+        request.auth.token.email == 's8waeel@gmail.com' || 
+        request.auth.token.email == 'admin@shafa.edu.sa' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner')
+      );
+    }
+    
+    function isAdmin() {
+      return isOwner() || (
+        isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+    
+    function isApproved() {
+      return isOwner() || (
+        isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'approved'
+      );
+    }
+    
+    function isMember() {
+      return isAdmin() || (
+        isApproved() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'member'
+      );
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // USERS COLLECTION
+    // -------------------------------------------------------------------------
+    
+    match /users/{userId} {
+      function isValidUser(data) {
+        return data.keys().hasAll(['email', 'role', 'status']) &&
+               (!('uid' in data) || data.uid == userId) &&
+               data.email is string && data.email.size() <= 256 &&
+               data.role in ['owner', 'admin', 'member', 'visitor'] &&
+               data.status in ['pending', 'approved', 'rejected', 'suspended'];
+      }
+
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && (
+        (incoming().role == 'visitor' && incoming().status == 'pending') ||
+        (isOwner() && incoming().role == 'owner' && incoming().status == 'approved')
+      );
+      
+      allow update: if isSignedIn() && isValidUser(incoming()) && (
+        // User updating their own profile (limited fields)
+        (request.auth.uid == userId && 
+         incoming().role == existing().role && 
+         incoming().status == existing().status &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'updatedAt'])) ||
+        // Admin/Owner updating any profile
+        (isAdmin() && (isOwner() || incoming().role != 'owner'))
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // SCHOOLS, DOMAINS, STANDARDS, INDICATORS
+    // -------------------------------------------------------------------------
+    
+    match /schools/{id} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(id);
+    }
+    
+    match /domains/{id} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(id);
+    }
+    
+    match /standards/{id} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(id);
+    }
+    
+    match /indicators/{id} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(id);
+    }
+
+    // -------------------------------------------------------------------------
+    // SYSTEM SETTINGS COLLECTION
+    // -------------------------------------------------------------------------
+    
+    match /settings/{settingId} {
+      function isValidSetting(data) {
+        return data.keys().hasOnly(['driveFolderUrl', 'driveFolderName', 'updatedBy', 'updatedAt']) &&
+               (!('driveFolderUrl' in data) || (data.driveFolderUrl is string && data.driveFolderUrl.size() <= 1024)) &&
+               (!('driveFolderName' in data) || (data.driveFolderName is string && data.driveFolderName.size() <= 256));
+      }
+
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidId(settingId) && isValidSetting(incoming());
+      allow delete: if isAdmin() && isValidId(settingId);
+    }
+
+    // -------------------------------------------------------------------------
+    // EVIDENCE COLLECTION
+    // -------------------------------------------------------------------------
+    
+    match /evidence/{evidenceId} {
+      function isValidEvidence(data) {
+        return data.keys().hasAll(['title', 'indicatorId', 'status', 'uploadedBy']) &&
+               data.title is string && data.title.size() <= 500 &&
+               data.indicatorId is string && data.indicatorId.size() <= 128 &&
+               data.status in ['pending', 'approved', 'rejected', 'archived'] &&
+               data.uploadedBy is string && data.uploadedBy.size() <= 128;
+      }
+
+      allow read: if true;
+      
+      allow create: if isMember() && isValidEvidence(incoming()) && incoming().uploadedBy == request.auth.uid;
+      
+      allow update: if isSignedIn() && isValidEvidence(incoming()) && (
+        (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'rejectionReason', 'updatedAt'])) ||
+        (isMember() && resource.data.uploadedBy == request.auth.uid && 
+         resource.data.status == 'pending' &&
+         incoming().status == 'pending' &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'updatedAt']))
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // DIGITAL LIBRARY FILES COLLECTION
+    // -------------------------------------------------------------------------
+    
+    match /libraryFiles/{fileId} {
+      function isValidLibraryFile(data) {
+        return data.keys().hasAll(['title', 'fileUrl', 'categoryId', 'accessLevel', 'uploadedBy']) &&
+               data.title is string && data.title.size() <= 500 &&
+               data.fileUrl is string && data.fileUrl.size() <= 2048 &&
+               data.categoryId is string && data.categoryId.size() <= 100 &&
+               data.accessLevel in ['public', 'private'] &&
+               data.uploadedBy == request.auth.uid;
+      }
+
+      allow read: if true;
+      allow create: if isMember() && isValidLibraryFile(incoming());
+      allow update: if isMember() && isValidLibraryFile(incoming()) && (isAdmin() || resource.data.uploadedBy == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // UPLOADED FILES & CHUNKS (Direct Cloud Upload Storage)
+    // -------------------------------------------------------------------------
+    
+    match /uploadedFiles/{fileId} {
+      function isValidUploadedFile(data) {
+        return data.keys().hasAll(['id', 'fileName', 'totalChunks', 'uploadedBy']) &&
+               data.fileName is string && data.fileName.size() <= 500 &&
+               data.totalChunks is int && data.totalChunks >= 1 && data.totalChunks <= 50 &&
+               data.uploadedBy == request.auth.uid;
+      }
+
+      allow read: if true;
+      allow create: if isMember() && isValidId(fileId) && isValidUploadedFile(incoming());
+      allow delete: if isAdmin();
+
+      match /chunks/{chunkId} {
+        allow read: if true;
+        allow create: if isMember() && incoming().index is int && incoming().data is string && incoming().data.size() <= 800000;
+        allow delete: if isAdmin();
+      }
+    }
+  }
+}
