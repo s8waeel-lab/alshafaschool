@@ -76,7 +76,7 @@ export default function StandalonePreviewPage() {
               const dataCopy = new Uint8Array(res.uint8Array);
               loadingTask = pdfjsLib.getDocument({ data: dataCopy });
             } else if (res.resolvedUrl) {
-              const response = await fetch(res.resolvedUrl);
+              const response = await fetch(res.resolvedUrl, { mode: 'cors' });
               const buf = await response.arrayBuffer();
               loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buf) });
             }
@@ -89,7 +89,7 @@ export default function StandalonePreviewPage() {
               for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
                 if (!isMounted) return;
                 const page = await pdf.getPage(pageNum);
-                const viewport = page.getViewport({ scale: 1.7 });
+                const viewport = page.getViewport({ scale: 1.8 }); // Higher scale for clarity
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
@@ -104,9 +104,10 @@ export default function StandalonePreviewPage() {
                 setPdfPages(renderedPages);
               }
             }
-          } catch {
+          } catch (err) {
+            console.error('PDF render failed:', err);
             // If external PDF URL blocks direct CORS fetch, use embedded Google Docs viewer
-            if (isMounted && (src.startsWith('http://') || src.startsWith('https://'))) {
+            if (isMounted && src.startsWith('http')) {
               setUseDocsViewerFallback(true);
             }
           }
@@ -114,7 +115,7 @@ export default function StandalonePreviewPage() {
           try {
             let bytes = res.uint8Array;
             if (!bytes && res.resolvedUrl) {
-              const response = await fetch(res.resolvedUrl);
+              const response = await fetch(res.resolvedUrl, { mode: 'cors' });
               const buf = await response.arrayBuffer();
               bytes = new Uint8Array(buf);
             }
@@ -128,12 +129,13 @@ export default function StandalonePreviewPage() {
                 setSheetRows(rows);
               }
             }
-          } catch {
-            if (isMounted && (src.startsWith('http://') || src.startsWith('https://'))) {
+          } catch (err) {
+            console.error('Sheet render failed:', err);
+            if (isMounted && src.startsWith('http')) {
               setUseDocsViewerFallback(true);
             }
           }
-        } else if (pType === 'other' && (src.startsWith('http://') || src.startsWith('https://'))) {
+        } else if (pType === 'other' && src.startsWith('http')) {
           setUseDocsViewerFallback(true);
         }
       } catch (err) {

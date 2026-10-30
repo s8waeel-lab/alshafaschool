@@ -184,7 +184,7 @@ export const generatePdfThumbnail = async (
       const dataCopy = new Uint8Array(source.data);
       loadingTask = pdfjsLib.getDocument({ data: dataCopy });
     } else if (source.url) {
-      const response = await fetch(source.url);
+      const response = await fetch(source.url, { mode: 'cors' });
       const arrayBuf = await response.arrayBuffer();
       loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuf) });
     } else {

@@ -1,6 +1,6 @@
 {
   "name": "مكتبة مجمع الشفا التعليمي",
-  "description": "بوابة المكتبة الرقمية والتقويم الذاتي وشواهد الأداء المدرسي لمجمع الشفا التعليمي.",
+  "description": "بوابة المكتبة الرقمية والتقويم وشواهد الأداء المدرسي لمجمع الشفا التعليمي.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
