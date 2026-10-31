@@ -36,6 +36,7 @@ import {
 import { uploadFileResilient } from '../utils/fileUtils';
 import SquareFileCard from '../components/SquareFileCard';
 import FilePreviewModal, { PreviewableFileItem } from '../components/FilePreviewModal';
+import QuotaAlert from '../components/QuotaAlert';
 
 export default function IndicatorPage() {
   const { indicatorId, schoolId } = useParams();
@@ -320,6 +321,8 @@ export default function IndicatorPage() {
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-50 rounded-full -mr-48 -mt-48 opacity-30 blur-[100px]"></div>
       </div>
 
+      <QuotaAlert />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Evidence Square Cards Grid */}
         <div className="lg:col-span-2 space-y-6">
@@ -368,15 +371,16 @@ export default function IndicatorPage() {
 
         {/* Action Sidebar */}
         <div className="space-y-6">
-          <div className="bg-slate-900 rounded-[40px] p-8 md:p-10 text-white shadow-2xl relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-6">
-                <div className="w-14 h-14 bg-blue-600/20 rounded-2xl flex items-center justify-center">
-                  <Plus size={28} className="text-blue-400" />
+          {isAdmin ? (
+            <div className="bg-slate-900 rounded-[40px] p-8 md:p-10 text-white shadow-2xl relative overflow-hidden">
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-14 h-14 bg-blue-600/20 rounded-2xl flex items-center justify-center">
+                    <Plus size={28} className="text-blue-400" />
+                  </div>
                 </div>
-              </div>
 
-              <h3 className="text-2xl font-black mb-2">توثيق جديد</h3>
+                <h3 className="text-2xl font-black mb-2">توثيق جديد</h3>
               <p className="text-slate-400 text-xs mb-6 leading-relaxed">
                 اختر رفع ملف مباشر من جهازك أو إرفاق رابط الشاهد من Google Drive.
               </p>
@@ -397,8 +401,6 @@ export default function IndicatorPage() {
                   <span>{statusMessage.text}</span>
                 </div>
               )}
-              
-              {isAdmin ? (
                 <div className="space-y-5">
                   {/* Mode Switcher Tabs */}
                   <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-white/5 rounded-2xl border border-white/10">
@@ -509,21 +511,24 @@ export default function IndicatorPage() {
                     </form>
                   )}
                 </div>
-              ) : (
-                <div className="bg-white/5 p-6 rounded-3xl text-sm font-bold text-amber-400 border border-white/10 flex flex-col gap-4">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle size={20} />
-                    استعراض وتحميل الشواهد متاح للجميع
-                  </div>
-                  <p className="text-[11px] text-slate-300 leading-relaxed font-normal">
-                    يمكنك استعراض جميع الشواهد مباشرة أو تحميلها. لرفع شواهد جديدة، يرجى تسجيل الدخول بحساب عضو معتمد.
-                  </p>
-                </div>
-              )}
+              </div>
             </div>
-            
-            <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-blue-500 rounded-full opacity-10 blur-3xl pointer-events-none"></div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-[40px] p-8 md:p-10 border border-gray-100 shadow-sm relative overflow-hidden">
+              <div className="relative z-10 flex flex-col gap-4">
+                <div className="flex items-center gap-3 text-amber-600">
+                  <AlertCircle size={24} />
+                  <h3 className="text-lg font-black">استعراض الشواهد</h3>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed font-bold">
+                  يمكنك استعراض كافة الشواهد المعتمدة والملفات المرفقة لهذا المؤشر. رفع الشواهد متاح فقط لأعضاء الإدارة والمديرين المعتمدين.
+                </p>
+                <div className="p-3 bg-blue-50 text-blue-700 rounded-2xl text-[10px] font-bold border border-blue-100">
+                  تم قفل خاصية الرفع للحسابات العادية والزوار.
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="bg-white rounded-[40px] p-10 border border-gray-100 shadow-sm">
             <h3 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-3">

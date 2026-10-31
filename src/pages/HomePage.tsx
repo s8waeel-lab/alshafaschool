@@ -15,7 +15,13 @@ export default function HomePage() {
         if (active) setLibraryCount(files.length);
       })
       .catch(() => {
-        if (active) setLibraryCount(0);
+        if (active) {
+          // Fallback to local cache if possible
+          import('../services/fileService').then(({ getCachedLibraryFiles }) => {
+            const cached = getCachedLibraryFiles();
+            setLibraryCount(cached.length || 0);
+          });
+        }
       });
     return () => {
       active = false;

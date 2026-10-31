@@ -170,7 +170,7 @@ service cloud.firestore {
 
       allow read: if true;
       allow create: if isAdmin() && isValidLibraryFile(incoming());
-      allow update: if isMember() && isValidLibraryFile(incoming()) && (isAdmin() || resource.data.uploadedBy == request.auth.uid);
+      allow update: if (isAdmin() || (isMember() && resource.data.uploadedBy == request.auth.uid)) && isValidLibraryFile(incoming());
       allow delete: if isAdmin();
     }
 

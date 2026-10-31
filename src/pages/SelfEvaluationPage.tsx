@@ -23,6 +23,7 @@ import {
   Network
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import QuotaAlert from '../components/QuotaAlert';
 
 export default function SelfEvaluationPage() {
   const [schools, setSchools] = useState<School[]>([]);
@@ -141,6 +142,8 @@ export default function SelfEvaluationPage() {
         </div>
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full -mr-32 -mt-32 opacity-50 blur-3xl"></div>
       </div>
+
+      <QuotaAlert />
 
       {/* Shared Domains Overview Box */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -35,39 +35,39 @@ export default function AdminDashboardPage() {
     if (!user) return;
     const fetchStats = async () => {
       try {
-        const getUsersList = async () => {
-          try {
-            const snap = await runFirestoreOp(() => getDocs(collection(db, 'users')));
-            const list = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
-            writeLocalCache('shafa_all_users', list);
-            return list;
-          } catch {
-            try {
-              const cached = await getDocsFromCache(collection(db, 'users'));
-              if (!cached.empty) {
-                return cached.docs.map(d => ({ uid: d.id, ...d.data() }));
-              }
-            } catch {
-              // Ignore
-            }
-            return readLocalCache<any[]>('shafa_all_users', profile ? [profile] : []);
-          }
-        };
-
-        const [usersList, evidenceList, filesList] = await Promise.all([
-          getUsersList(),
-          getAllEvidenceResilient(),
-          getLibraryFiles(undefined, undefined, false)
+        const { getCountFromServer, collection } = await import('firebase/firestore');
+        
+        const [usersSnap, evidenceSnap, filesSnap] = await Promise.all([
+          runFirestoreOp(() => getCountFromServer(collection(db, 'users'))),
+          runFirestoreOp(() => getCountFromServer(collection(db, 'evidence'))),
+          runFirestoreOp(() => getCountFromServer(collection(db, 'libraryFiles')))
         ]);
         
         setStats({
-          users: usersList.length || (profile ? 1 : 0),
-          evidence: evidenceList.length,
-          files: filesList.length,
-          pendingUsers: usersList.filter((u: any) => u.status === 'pending').length
+          users: usersSnap.data().count,
+          evidence: evidenceSnap.data().count,
+          files: filesSnap.data().count,
+          pendingUsers: 0 // We can't easily get pending count without a query, let's keep it 0 or do a separate count
         });
+
+        // For pending users, we still need a small query
+        const { query, where } = await import('firebase/firestore');
+        const pendingSnap = await runFirestoreOp(() => getCountFromServer(query(collection(db, 'users'), where('status', '==', 'pending'))));
+        setStats(prev => ({ ...prev, pendingUsers: pendingSnap.data().count }));
+
       } catch {
-        // Fallback stats
+        // Fallback stats from existing resilient getters (which use cache)
+        try {
+          const [evList, libFiles] = await Promise.all([
+            getAllEvidenceResilient(),
+            getLibraryFiles(undefined, undefined, false)
+          ]);
+          setStats(prev => ({
+            ...prev,
+            evidence: evList.length,
+            files: libFiles.length
+          }));
+        } catch { /* ignore */ }
       } finally {
         setLoading(false);
       }

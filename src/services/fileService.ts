@@ -5,7 +5,9 @@ import {
   doc, 
   addDoc,
   deleteDoc,
-  serverTimestamp
+  serverTimestamp,
+  query,
+  where
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage, readLocalCache, writeLocalCache, runFirestoreOp } from './firebase';
@@ -74,8 +76,15 @@ export const getLibraryFiles = async (categoryId?: string, schoolId?: string, is
   let files: LibraryFile[] = [];
 
   try {
-    const snapshot = await runFirestoreOp(() => getDocs(collection(db, 'libraryFiles')));
-    const serverFiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LibraryFile));
+    let q = query(collection(db, 'libraryFiles'));
+    
+    // We fetch all and filter in JS if many filters, but let's try at least one server-side filter
+    if (isPublicOnly) {
+      q = query(collection(db, 'libraryFiles'), where('accessLevel', '==', 'public'));
+    }
+
+    const snapshot = await runFirestoreOp(() => getDocs(q));
+    const serverFiles = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as LibraryFile));
     const localOnly = getCachedLibraryFiles().filter(f => f.id.startsWith('local_lib_'));
     files = [...serverFiles, ...localOnly];
     saveCachedLibraryFiles(files);

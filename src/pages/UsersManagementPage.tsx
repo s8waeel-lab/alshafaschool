@@ -16,6 +16,7 @@ import {
   RefreshCcw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import QuotaAlert from '../components/QuotaAlert';
 
 export default function UsersManagementPage() {
   const { profile } = useAuth();
@@ -117,18 +118,7 @@ export default function UsersManagementPage() {
         </div>
       </div>
 
-      {isQuotaTripped && (
-        <div className="bg-amber-50 border border-amber-200 p-6 rounded-3xl flex items-start gap-4 text-amber-800 animate-in fade-in slide-in-from-top-4">
-          <AlertCircle className="shrink-0 mt-1" size={24} />
-          <div className="space-y-1">
-            <h3 className="font-black text-sm">تنبيه: تم تجاوز حد القراءة اليومي (Quota)</h3>
-            <p className="text-xs font-bold leading-relaxed opacity-90">
-              قد لا تظهر كافة الأسماء المسجلة حالياً أو قد تكون البيانات المعروضة قديمة من الذاكرة المؤقتة.
-              يرجى المحاولة لاحقاً عندما يتم تصفير العداد اليومي من قِبل Google Firestore.
-            </p>
-          </div>
-        </div>
-      )}
+      <QuotaAlert />
 
       {loading ? (
         <div className="p-20 text-center space-y-4 bg-white rounded-3xl border border-gray-100">

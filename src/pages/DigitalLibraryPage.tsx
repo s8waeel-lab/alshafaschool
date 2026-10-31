@@ -18,6 +18,7 @@ import { serverTimestamp } from 'firebase/firestore';
 import { uploadFileResilient } from '../utils/fileUtils';
 import SquareFileCard from '../components/SquareFileCard';
 import FilePreviewModal, { PreviewableFileItem } from '../components/FilePreviewModal';
+import QuotaAlert from '../components/QuotaAlert';
 
 export default function DigitalLibraryPage() {
   const [files, setFiles] = useState<LibraryFile[]>([]);
@@ -188,6 +189,8 @@ export default function DigitalLibraryPage() {
         </div>
         <div className="absolute top-0 right-0 w-48 h-48 bg-blue-50 rounded-full -mr-24 -mt-24 opacity-40 blur-3xl pointer-events-none"></div>
       </div>
+
+      <QuotaAlert />
 
       {statusMessage && (
         <div

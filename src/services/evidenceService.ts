@@ -103,14 +103,28 @@ export const removeEvidenceResilient = async (id: string): Promise<void> => {
 };
 
 export const getEvidenceByIndicator = async (indicatorId: string, schoolId?: string) => {
-  const all = await getAllEvidenceResilient();
-  let results = all.filter(e => e.indicatorId === indicatorId);
-  
-  if (schoolId) {
-    results = results.filter(e => e.isShared || e.schoolId === schoolId);
+  try {
+    let q = query(collection(db, 'evidence'), where('indicatorId', '==', indicatorId));
+    const snap = await runFirestoreOp(() => getDocs(q));
+    const serverItems = snap.docs.map(d => ({ id: d.id, ...d.data() } as Evidence));
+    
+    // Merge with local-only items from cache
+    const localOnly = getCachedEvidence().filter(e => e.id.startsWith('local_ev_') && e.indicatorId === indicatorId);
+    let results = [...serverItems, ...localOnly];
+    
+    if (schoolId) {
+      results = results.filter(e => e.isShared || e.schoolId === schoolId || e.schoolId === 'shared');
+    }
+    return results;
+  } catch {
+    // Fallback to cache
+    const all = await getAllEvidenceResilient();
+    let results = all.filter(e => e.indicatorId === indicatorId);
+    if (schoolId) {
+      results = results.filter(e => e.isShared || e.schoolId === schoolId || e.schoolId === 'shared');
+    }
+    return results;
   }
-  
-  return results;
 };
 
 export const uploadEvidence = async (
